@@ -8,7 +8,7 @@ from compute_L_by_D import compute_L_by_D
 
 # Import the NIGnet model that we trained to fit the airfoil
 airfoil_file_name = 'NACA0012'
-nig_net = NIGnet(layer_count = 4, act_fn = nn.Tanh)
+nig_net = NIGnet(layer_count = 2, act_fn = nn.Tanh)
 nig_net.load_state_dict(torch.load(f'assets/nignet_fit_to_{airfoil_file_name}.pth', weights_only = True))
 
 
