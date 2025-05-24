@@ -25,7 +25,7 @@ def automate_training(
 
         if epoch == 0 or (epoch + 1) % print_cost_every == 0:
             num_digits = len(str(epochs))
-            print(f'Epoch: [{epoch + 1:{num_digits}}/{epochs}]. Loss: {loss.item():11.6f}')
+            print(f'Epoch: [{epoch + 1:{num_digits}}/{epochs}]. Loss: {loss.item():11.7f}')
 
 
 def plot_curves(Xc: torch.Tensor, Xt: torch.Tensor) -> None:
