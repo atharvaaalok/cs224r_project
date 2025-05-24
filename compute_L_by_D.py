@@ -8,7 +8,7 @@ import math
 # therefore creating a new instance in each run is extremely expensive.
 xf = XFoil()
 
-def compute_L_by_D(X: npt.NDArray, Re = 1e6, max_iter = 400, print_xfoil_output = False) -> float:
+def compute_L_by_D(X: npt.NDArray, Re = 1e6, max_iter = 100, print_xfoil_output = False) -> float:
     """Given an airfoil's coordinates compute the L by D ratio.
 
     Args:
