@@ -20,13 +20,13 @@ t = torch.linspace(0, 1, num_pts).reshape(-1, 1)
 
 
 # Create a NIGnet object
-nig_net = NIGnet(layer_count = 4, act_fn = nn.Tanh)
+nig_net = NIGnet(layer_count = 2, act_fn = nn.Tanh)
 
 
 # Fit the NIGnet to the target airfoil using the provided automate training function
 automate_training(
     model = nig_net, loss_fn = gs.MSELoss(), X_train = t, Y_train = Xt,
-    learning_rate = 0.1, epochs = 10000, print_cost_every = 2000
+    learning_rate = 0.1, epochs = 100000, print_cost_every = 2000
 )
 
 
