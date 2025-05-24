@@ -23,7 +23,7 @@ class NIGnetShapeEnv(gym.Env):
 
         # Flatten parameter vector once to fix observation and action dimensions
         with torch.no_grad():
-            self._param_template = parameters_to_vector(self.nignet.parameters()).detach().clone()
+            self._param_template = parameters_to_vector(self.nig_net.parameters()).detach().clone()
         self.num_params = self._param_template.numel()
 
         # Define observation space
