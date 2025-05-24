@@ -28,7 +28,7 @@ def automate_training(
             print(f'Epoch: [{epoch + 1:{num_digits}}/{epochs}]. Loss: {loss.item():11.7f}')
 
 
-def plot_curves(Xc: torch.Tensor, Xt: torch.Tensor) -> None:
+def plot_curves(Xc: torch.Tensor, Xt: torch.Tensor, filename = None) -> None:
     # Get torch tensor to cpu and disable gradient tracking to plot using matplotlib
     Xc = Xc.detach().cpu()
     Xt = Xt.detach().cpu()
@@ -40,4 +40,7 @@ def plot_curves(Xc: torch.Tensor, Xt: torch.Tensor) -> None:
     plt.plot(Xc[:, 0], Xc[:, 1], color = "#000000", linewidth = 2, linestyle = "--")
 
     plt.axis('equal')
+
+    if filename is not None:
+        plt.savefig(filename, dpi = 600)
     plt.show()
