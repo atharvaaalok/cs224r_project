@@ -14,12 +14,13 @@ class NIGnetShapeEnv(gym.Env):
 
     metadata = {'render_modes': []}
 
-    def __init__(self, nig_net, action_sigma, max_episode_steps):
+    def __init__(self, nig_net, action_sigma, max_episode_steps, non_convergence_reward):
         super().__init__()
 
         self.nig_net = nig_net
         self.action_sigma = action_sigma
         self.max_episode_steps = max_episode_steps
+        self.non_convergence_reward = non_convergence_reward
 
         # Flatten parameter vector once to fix observation and action dimensions
         with torch.no_grad():
@@ -77,7 +78,11 @@ class NIGnetShapeEnv(gym.Env):
         num_pts = 250
         t = torch.linspace(0, 1, num_pts).reshape(-1, 1)
         X = self.nig_net(t).detach().cpu().numpy()
-        reward = compute_L_by_D(X)
+        L_by_D = compute_L_by_D(X)
+        if L_by_D is None:
+            reward = self.non_convergence_reward
+        else:
+            reward = L_by_D
 
         terminated = False
         truncated = self._step_count >= self.max_episode_steps
