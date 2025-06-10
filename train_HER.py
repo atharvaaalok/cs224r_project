@@ -2,13 +2,15 @@ import torch
 from torch import nn
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from NIGnets import NIGnet
-from stable_baselines3 import PPO
+from stable_baselines3 import SAC
+from stable_baselines3.her import HerReplayBuffer
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.logger import configure
 import matplotlib.pyplot as plt
+import numpy as np
 
-from NIGnetShapeEnv import NIGnetShapeEnv
+from NIGnetShapeEnvGoal import NIGnetShapeEnvGoal
 from compute_L_by_D import compute_L_by_D
 # from shape_assets.utils import plot_curves
 
@@ -34,14 +36,17 @@ def plot_curves_normalized(Xc: torch.Tensor, Xt: torch.Tensor, filename = None) 
     plt.tight_layout()
     plt.legend()
 
-    plt.savefig(filename + '.svg')
+    plt.savefig(filename + '_HER_news' + '.svg')
 
     if filename is not None:
         plt.savefig(filename + '.png', dpi = 600)
     plt.show()
 
 
+
+
 if __name__ == '__main__':
+    goal_sampler = lambda: np.random.uniform(10.0, 50.0)
 
     # Import the NIGnet model that we trained to fit the airfoil
     airfoil_file_name = 'NACA0012'
@@ -51,12 +56,13 @@ if __name__ == '__main__':
 
     # Create an environment
     action_sigma = 0.01
-    max_episode_steps = 15
+    max_episode_steps = 5
     non_convergence_reward = -50
     def make_env():
-        env = NIGnetShapeEnv(nig_net = nig_net, action_sigma = action_sigma,
+        env = NIGnetShapeEnvGoal(nig_net = nig_net, action_sigma = action_sigma,
                         max_episode_steps = max_episode_steps,
-                        non_convergence_reward = non_convergence_reward)
+                        non_convergence_reward = non_convergence_reward,
+                        goal_sampler = goal_sampler)
         return env
 
     # Use vectorized environments
@@ -71,9 +77,16 @@ if __name__ == '__main__':
     new_logger = configure(tensorboard_log_file_location, ['stdout', 'tensorboard'])
 
     print_stats_every = 100 // num_env
-    model = PPO(policy = 'MlpPolicy', env = env, verbose = 1,
+    model = SAC(policy = 'MultiInputPolicy', env = env,
+                replay_buffer_class = HerReplayBuffer,
+                replay_buffer_kwargs = dict(
+                    n_sampled_goal = 4,
+                    goal_selection_strategy = 'future',
+                ),
+                verbose = 1,
                 tensorboard_log = tensorboard_log_file_location,
-                n_steps = print_stats_every, batch_size = 64)
+                learning_starts = max_episode_steps * num_env * 2,
+                train_freq = (1, 'step'), batch_size = 512)
 
 
     model.set_logger(new_logger)
@@ -84,25 +97,34 @@ if __name__ == '__main__':
 
 
     # Policy evaluation
+    test_goal_sampler = lambda: np.array([30.0])
+
     def make_test_env():
-        env = NIGnetShapeEnv(nig_net = nig_net, action_sigma = action_sigma,
-                        max_episode_steps = max_episode_steps + 1,
-                        non_convergence_reward = non_convergence_reward)
+        env = NIGnetShapeEnvGoal(nig_net = nig_net, action_sigma = action_sigma,
+                        max_episode_steps = max_episode_steps,
+                        non_convergence_reward = non_convergence_reward,
+                        goal_sampler = test_goal_sampler)
         return env
     num_env = 16
     test_env = SubprocVecEnv([make_test_env for _ in range(num_env)])
     test_env = VecMonitor(test_env)
     observation = test_env.reset()
-    for _ in range(max_episode_steps):
+    for _ in range(max_episode_steps - 1):
         action, _states = model.predict(observation, deterministic = True)
         observation, reward, done, info = test_env.step(action)
         print(f'reward: {reward[0]}')
     
-    observation = observation[0]
+    obs = observation['observation'][0]
+    achieved_goal = observation['achieved_goal'][0]
+    desired_goal = observation['desired_goal'][0]
+
+    print(obs)
+    print(f'achieved_goal: {achieved_goal}')
+    print(f'desired_goal: {desired_goal}')
     
     # Convert observation to network parameters
     test_nig_net = NIGnet(layer_count = 2, act_fn = nn.Tanh)
-    vector_to_parameters(torch.from_numpy(observation), test_nig_net.parameters())
+    vector_to_parameters(torch.from_numpy(obs), test_nig_net.parameters())
 
     # Calculate L by D and plot the airfoil produced
     num_pts = 250

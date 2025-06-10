@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from torch import nn
 import geosimilarity as gs
-from NIGnets import NIGnet
+from nignet_normalized import NIGnetNorm
 
 
 from shape_assets.utils import automate_training, plot_curves
@@ -25,7 +25,7 @@ t = torch.linspace(0, 1, num_pts).reshape(-1, 1)
 
 
 # Create a NIGnet object
-nig_net = NIGnet(layer_count = 2, act_fn = nn.Tanh)
+nig_net = NIGnetNorm(layer_count = 2, act_fn = nn.Tanh)
 
 
 # Fit the NIGnet to the target airfoil using the provided automate training function
@@ -41,4 +41,4 @@ plot_curves(Xc, Xt)
 
 
 # Save the model
-torch.save(nig_net.state_dict(), f'assets/nignet_fit_to_normalized_{airfoil_file_name}.pth')
+torch.save(nig_net.state_dict(), f'assets/nignet_normalized_fit_to_{airfoil_file_name}.pth')
